@@ -36,9 +36,8 @@ class OpenAIService:
         
         prompt = f"""
 다음은 사용자가 찾고 있는 상점 목록입니다:
-
 {stores_text}
-
+\n
 사용자 질문: "{user_query}"
 
 위 목록에서 사용자가 찾는 상점의 번호만 숫자로 답변해주세요. 
@@ -60,7 +59,9 @@ class OpenAIService:
             pass
         
         return None
-    
+
+    # 상점 정보를 바탕으로 사용자 질문에 답변 생성
+    # 결정된 상점의 챗봇 상담원 페르소나 데이터를 바탕으로 AI가 답변 생성하도록 수정
     async def generate_store_response(self, store_info: Dict[str, Any], 
                                      user_message: str,
                                      chat_history: List[Dict[str, str]] = []) -> str:
@@ -70,19 +71,20 @@ class OpenAIService:
         
         system_prompt = f"""
 당신은 '{store_info['name']}'의 친절한 챗봇 상담원입니다.
+{store_info['persona']}에 맞게 답변해주어야 합니다.
 
 [상점 정보]
 - 상점명: {store_info['name']}
 - 업종: {store_info['industry']}
 - 주소: {store_info['address']}
 - 전화번호: {store_info['phone']}
-- 영업시간: {store_info['opening_hour_start']} ~ {store_info['opening_hour_end']}
+- 영업시간: {store_info['openingHourStart']} ~ {store_info['openingHourEnd']}
 - 휴무일: {', '.join(store_info['holidays'])}
 - 메뉴:
 {services_text}
 - 강점: {store_info.get('strengths', '없음')}
-- 주차정보: {store_info.get('parking_info', '없음')}
-- SNS: {store_info.get('sns_url', '없음')}
+- 주차정보: {store_info.get('parkingInfo', '없음')}
+- SNS: {store_info.get('snsUrl', '없음')}
 
 위 정보를 바탕으로 고객의 질문에 친절하고 정확하게 답변해주세요.
 정보가 없는 경우 솔직하게 알려주세요.

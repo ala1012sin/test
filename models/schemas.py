@@ -5,7 +5,7 @@ from datetime import time
 # 음식점 메뉴 항목
 class Service(BaseModel):
     menu: str
-    price: float
+    price: str  # 가격을 문자열로 변경 (12,500 형식 지원)
 
 # 음식점 데이터 모델
 class StoreData(BaseModel):
@@ -16,11 +16,15 @@ class StoreData(BaseModel):
     phone: str
     openingHourStart: str
     openingHourEnd: str
-    holidays: List[str]
-    services: List[Service]
+    holidays: List[str] = []  # 기본값 빈 리스트
+    services: List[Service] = []  # 기본값 빈 리스트
     strengths: Optional[str] = ""
     parkingInfo: Optional[str] = ""
     snsUrl: Optional[str] = ""
+
+# 검색 결과 모델
+class StoreSearchResult(StoreData):
+    score: float  # 검색 점수 추가
 
 # 사용자 위치 요청 모델
 class LocationRequest(BaseModel):
