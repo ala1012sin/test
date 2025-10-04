@@ -2,10 +2,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import time
 
+# 음식점 메뉴 항목
 class Service(BaseModel):
     menu: str
     price: float
 
+# 음식점 데이터 모델
 class StoreData(BaseModel):
     surveyId: str
     name: str
@@ -20,6 +22,7 @@ class StoreData(BaseModel):
     parkingInfo: Optional[str] = ""
     snsUrl: Optional[str] = ""
 
+# 사용자 위치 요청 모델
 class LocationRequest(BaseModel):
     latitude: float
     longitude: float
@@ -27,6 +30,7 @@ class LocationRequest(BaseModel):
 
 
 # 수정 해야 함
+# 카카오톡 요청 및 응답 모델
 class KakaoUserRequest(BaseModel):
     user_key: str
     utterance: str
@@ -36,6 +40,7 @@ class KakaoUserRequest(BaseModel):
 class KakaoResponse(BaseModel):
     version: str = "2.0"
     template: dict
+
 
 class ChatRequest(BaseModel):
     store_id: str
