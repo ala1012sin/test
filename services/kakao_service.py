@@ -1,4 +1,6 @@
-from typing import List, Dict, Any
+import os
+from typing import Optional, List, Dict, Any
+import httpx
 
 class KakaoService:
     @staticmethod
@@ -108,3 +110,53 @@ class KakaoService:
                 ]
             }
         }
+
+    @staticmethod
+    async def geocode_landmark(location_text: Optional[str], fallback_text: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        우선순위: location_text -> fallback_text(sys_location)
+        카카오 로컬 API로 좌표(lat, lng) 조회. 성공 시 {"lat": float, "lng": float, "name": str} 반환.
+        """
+        query = (location_text or fallback_text or "").strip()
+        if not query:
+            return None
+
+        api_key = os.getenv("KAKAO_REST_API_KEY", "")
+        if not api_key:
+            # 키 없으면 좌표 변환 불가
+            return None
+
+        headers = {"Authorization": f"KakaoAK {api_key}"}
+        base = "https://dapi.kakao.com"
+
+        # 1) 키워드 검색
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(f"{base}/v2/local/search/keyword.json",
+                                     params={"query": query, "size": 1},
+                                     headers=headers)
+                if r.status_code == 200:
+                    docs = r.json().get("documents", [])
+                    if docs:
+                        y = float(docs[0]["y"])  # lat
+                        x = float(docs[0]["x"])  # lng
+                        name = docs[0].get("place_name") or query
+                        return {"lat": y, "lng": x, "name": name}
+
+                # 2) 주소 검색 (키워드 실패 시)
+                r2 = await client.get(f"{base}/v2/local/search/address.json",
+                                      params={"query": query},
+                                      headers=headers)
+                if r2.status_code == 200:
+                    docs = r2.json().get("documents", [])
+                    if docs:
+                        d = docs[0]
+                        y = float(d["y"])
+                        x = float(d["x"])
+                        name = d.get("address_name") or query
+                        return {"lat": y, "lng": x, "name": name}
+        except Exception:
+            # 타임아웃/네트워크 예외는 None 반환
+            return None
+
+        return None

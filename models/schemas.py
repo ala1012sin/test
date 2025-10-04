@@ -31,11 +31,10 @@ class LocationRequest(BaseModel):
 
 # 수정 해야 함
 # 카카오톡 요청 및 응답 모델
-class KakaoUserRequest(BaseModel):
-    user_key: str
-    utterance: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+class KakaoParams(BaseModel):
+    sys_location: Optional[str] = None
+    food: Optional[str] = None        
+    location: Optional[str] = None     
 
 class KakaoResponse(BaseModel):
     version: str = "2.0"
