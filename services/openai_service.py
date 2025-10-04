@@ -26,6 +26,7 @@ class OpenAIService:
         )
         return response.choices[0].message.content
     
+    # 사용자 질문과 매칭되는 상점 찾기(상점 스위칭)
     async def find_matching_store(self, user_query: str, 
                                   store_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         """사용자 질문과 매칭되는 상점 찾기"""
