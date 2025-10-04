@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 import json
 from utils.config import config
 from services.openai_service import OpenAIService
+import math
 
 class PineconeService:
     def __init__(self):
@@ -213,7 +214,121 @@ class PineconeService:
             import traceback
             traceback.print_exc()
             return None
-    
+
+    async def search_stores_by_location(self, latitude: float, longitude: float, radius_km: float = 5.0, top_k: int = 10) -> List[Dict[str, Any]]:
+        """
+        위도/경도 기반으로 주변 상점 검색
+        
+        Args:
+            latitude: 위도
+            longitude: 경도
+            radius_km: 검색 반경 (킬로미터, 기본값 5km)
+            top_k: 최대 결과 개수
+        
+        Returns:
+            거리순으로 정렬된 상점 리스트
+        """
+        try:
+            print(f"\n{'='*80}")
+            print(f"Searching stores by location")
+            print(f"{'='*80}")
+            print(f"Latitude: {latitude}")
+            print(f"Longitude: {longitude}")
+            print(f"Radius: {radius_km}km")
+            print(f"Top K: {top_k}\n")
+            
+            # Pinecone 메타데이터 필터로 검색
+            # 먼저 더 많은 결과를 가져온 후 거리로 필터링
+            results = self.index.query(
+                vector=[0.0] * 1536,  # 더미 벡터 (메타데이터만 사용)
+                top_k=100,  # 충분히 많이 가져오기
+                include_metadata=True
+            )
+            
+            stores_with_distance = []
+            
+            for match in results['matches']:
+                metadata = match['metadata']
+                
+                # 위도/경도가 있는지 확인
+                if 'latitude' not in metadata or 'longitude' not in metadata:
+                    continue
+                
+                store_lat = float(metadata['latitude'])
+                store_lon = float(metadata['longitude'])
+                
+                # 거리 계산
+                distance = self.calculate_distance(latitude, longitude, store_lat, store_lon)
+                
+                # 반경 내에 있는지 확인
+                if distance <= radius_km:
+                    parsed_store = self.parse_metadata(metadata)
+                    
+                    store = {
+                        'surveyId': parsed_store.get('surveyId', parsed_store.get('survey_id', '')),
+                        'name': parsed_store.get('name', ''),
+                        'industry': parsed_store.get('industry', ''),
+                        'address': parsed_store.get('address', ''),
+                        'phone': parsed_store.get('phone', ''),
+                        'openingHourStart': parsed_store.get('openingHourStart', ''),
+                        'openingHourEnd': parsed_store.get('openingHourEnd', ''),
+                        'holidays': parsed_store.get('holidays', []),
+                        'services': parsed_store.get('services', []),
+                        'strengths': parsed_store.get('strengths', ''),
+                        'parkingInfo': parsed_store.get('parkingInfo', ''),
+                        'snsUrl': parsed_store.get('snsUrl', ''),
+                        'latitude': store_lat,
+                        'longitude': store_lon,
+                        'distance': round(distance, 2)  # km 단위, 소수점 2자리
+                    }
+                    
+                    stores_with_distance.append(store)
+            
+            # 거리순으로 정렬
+            stores_with_distance.sort(key=lambda x: x['distance'])
+            
+            # top_k개만 반환
+            result_stores = stores_with_distance[:top_k]
+            
+            print(f"Found {len(result_stores)} stores within {radius_km}km\n")
+            
+            # 결과 출력
+            for i, store in enumerate(result_stores, 1):
+                print(f"Result #{i} (Distance: {store['distance']}km)")
+                self.print_store_data(store)
+            
+            print(f"{'='*80}\n")
+            return result_stores
+            
+        except Exception as e:
+            print(f"\nError searching stores by location: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+
+
+    def calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        두 좌표 간의 거리를 계산 (Haversine 공식)
+        반환값: 킬로미터 단위 거리
+        """
+        R = 6371  # 지구 반지름 (km)
+        
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        delta_lat = math.radians(lat2 - lat1)
+        delta_lon = math.radians(lon2 - lon1)
+        
+        a = math.sin(delta_lat/2) * math.sin(delta_lat/2) + \
+            math.cos(lat1_rad) * math.cos(lat2_rad) * \
+            math.sin(delta_lon/2) * math.sin(delta_lon/2)
+        
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        
+        distance = R * c
+        return distance
+
+
     def debug_print_all_vectors(self, limit: int = 3):
         """
         디버깅용: Pinecone에 저장된 벡터 샘플 출력
