@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import kakao_webhook, survey
+from routers import kakao_webhook
 import uvicorn
 
 app = FastAPI(
@@ -20,7 +20,6 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(kakao_webhook.router)
-app.include_router(survey.router)
 
 @app.get("/")
 async def root():
@@ -29,7 +28,6 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "kakao_webhook": "/kakao/webhook",
-            "survey": "/survey/store",
             "health": "/kakao/health"
         }
     }

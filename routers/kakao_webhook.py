@@ -22,7 +22,7 @@ async def kakao_webhook(request: Request):
         user_key = body.get("userRequest", {}).get("user", {}).get("id", "")
         utterance = body.get("userRequest", {}).get("utterance", "")
         
-        # 위치 정보 (있는 경우)
+        # 위치 정보 (있는 경우) -> 우리가 기능 구현해야 함
         params = body.get("action", {}).get("params", {})
         latitude = params.get("latitude")
         longitude = params.get("longitude")

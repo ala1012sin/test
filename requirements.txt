@@ -13,7 +13,8 @@ httpx==0.28.1
 idna==3.10
 jiter==0.11.0
 openai==2.1.0
-pinecone-client==6.0.0
+# pinecone-client==6.0.0 # 이거 안됨
+pinecone==7.3.0
 pinecone-plugin-interface==0.0.7
 pydantic==2.11.9
 pydantic_core==2.33.2
@@ -29,7 +30,7 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 urllib3==2.5.0
 uvicorn==0.37.0
-uvloop==0.21.0
+# uvloop==0.21.0
 watchfiles==1.1.0
 websockets==15.0.1
 sentence-transformers==2.2.2
