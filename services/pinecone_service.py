@@ -204,7 +204,7 @@ class PineconeService:
                 'parkingInfo': parsed_store.get('parkingInfo', ''),
                 'snsUrl': parsed_store.get('snsUrl', '')
             }
-            
+            #   dfsf
             print(f"{'='*80}\n")
             return store
             
