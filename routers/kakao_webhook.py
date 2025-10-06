@@ -27,7 +27,8 @@ async def kakao_webhook(request: Request):
         sys_location = params.get("sys_location")  
         food        = params.get("food")          
         location    = params.get("location")       
-        
+    
+                
 
         is_search = ("추천" in utterance) or ("맛집" in utterance) or any([sys_location, food, location])
 
@@ -53,28 +54,42 @@ async def kakao_webhook(request: Request):
 
             return kakao_service.create_text_response("죄송합니다. 검색 결과가 없습니다.")
 
-        # 4) 리스트 → 가게 선택 단계
-        if user_key in user_sessions and user_sessions[user_key].get("mode") == "list":
-            stores = user_sessions[user_key]["stores"]
-            selected_store = await openai_service.find_matching_store(utterance, stores)
+        action = body.get("action", {})
+        client_extra = action.get("clientExtra") or action.get("client_extra") or {}
+        store_name = (
+            params.get("store_name")
+            or client_extra.get("store_name")
+            or utterance.strip()
+        )
 
-            if selected_store:
-                user_sessions[user_key] = {"mode": "detail", "store": selected_store, "chat_history": []}
-                return kakao_service.create_store_detail_response(selected_store)
+        if store_name:
+            # Pinecone에서 가게 정보 검색
+            stores = await pinecone_service.search_stores_by_text(store_name, top_k=1)
+            if stores:
+                store_info = stores[0]
+                user_sessions[user_key] = {"mode": "detail", "store": store_info, "chat_history": []}
 
-            return kakao_service.create_text_response("어떤 가게를 선택하시겠어요? 가게 이름을 말씀해주세요.")
+                # LLM 호출하지 않고, 인사만 즉시 반환 (타임아웃 방지)
+                intro_text = f"안녕하세요! 😊 '{store_info['name']}'입니다.\n무엇을 도와드릴까요?"
+                return kakao_service.create_text_response(intro_text)
 
-        # 5) 상세 모드에서의 자유 질의 → LLM
+
+        # ==============================
+        # 3️⃣ 상세 모드 → 실제 AI 응답 단계
+        # ==============================
         if user_key in user_sessions and user_sessions[user_key].get("mode") == "detail":
-            store = user_sessions[user_key]["store"]
+            store_info = user_sessions[user_key]["store"]
             chat_history = user_sessions[user_key].get("chat_history", [])
-            response = await openai_service.generate_store_response(store, utterance, chat_history)
+
+            # LLM 응답 생성
+            response = await openai_service.generate_store_response(store_info, utterance, chat_history)
 
             chat_history.extend([
                 {"role": "user", "content": utterance},
                 {"role": "assistant", "content": response},
             ])
             user_sessions[user_key]["chat_history"] = chat_history[-10:]
+
             return kakao_service.create_text_response(response)
 
         # 6) 기본 응답
