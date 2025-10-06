@@ -21,38 +21,33 @@ class KakaoService:
     
     @staticmethod
     def create_list_card_response(stores: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """상점 리스트 카드 응답"""
         items = []
-        for store in stores[:5]:  # 최대 5개
-            services = store.get('services', [])
-            menu_text = ", ".join([s['menu'] for s in services[:3]])
-            
+        for s in stores[:5]:
+            services = s.get('services') or []
+            menu_text = ", ".join([sv.get('menu', '') for sv in services[:3] if sv.get('menu')])
             items.append({
-                "title": store['name'],
-                "description": f"{store['industry']} | {store['address']}\n메뉴: {menu_text}",
-                "imageUrl": "",  # 이미지가 있다면 추가
-                "link": {
-                    "web": store.get('sns_url', '')
+                "title": (s.get('name') or "")[:30],
+                "description": f"{s.get('industry', '')} | {s.get('address', '')}\n메뉴: {menu_text}"[:100],
+                "thumbnail": {"imageUrl": s.get('image_url', '')},
+                "buttons": [{
+                "label": "상세보기",
+                "action": "block",
+                "blockId": "68e34208edb87047afdef653",
+                "extra": {
+                    "store_id": s.get('id'),
+                    "store_name": s.get('name', "")
                 }
-            })
-        
+            }]
+        })
+
         return {
             "version": "2.0",
             "template": {
                 "outputs": [
                     {
-                        "listCard": {
-                            "header": {
-                                "title": "추천 맛집 리스트"
-                            },
-                            "items": items,
-                            "buttons": [
-                                {
-                                    "label": "더보기",
-                                    "action": "block",
-                                    "blockId": ""  # 블록 ID 설정 필요
-                                }
-                            ]
+                        "carousel": {
+                            "type": "basicCard",
+                            "items": items
                         }
                     }
                 ]
