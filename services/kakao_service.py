@@ -32,7 +32,7 @@ class KakaoService:
                 "buttons": [{
                 "label": "상세보기",
                 "action": "block",
-                "blockId": "68e34208edb87047afdef653",
+                "blockId": "68c908701d1fc539f4e2eae5",
                 "extra": {
                     "store_id": s.get('id'),
                     "store_name": s.get('name', "")
