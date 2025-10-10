@@ -27,7 +27,7 @@ async def kakao_recommend(request: Request):
 
     if geo:
         lat, lng = geo["lat"], geo["lng"]
-        stores = await pinecone.search_stores_by_location(lat, lng, radius=5.0, top_k=5)
+        stores = await pinecone.search_stores_by_location(lat, lng, radius_km=5.0, top_k=5)
     else:
         # 텍스트 기반 백업 검색
         query = " ".join([x for x in [utterance, sys_location, location, food] if x])
